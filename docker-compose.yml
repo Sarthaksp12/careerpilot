@@ -1,0 +1,34 @@
+# docker-compose.yml
+# This file defines and coordinates multiple containers as one system.
+version: "3.9"
+
+services:
+  # ---- Our FastAPI backend ----
+  backend:
+    build: ./backend          # build using backend/Dockerfile
+    ports:
+      - "8000:8000"            # host:container
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://careerpilot:careerpilot_pass@db:5432/careerpilot_db
+      - POSTGRES_HOST=db
+    depends_on:
+      - db                     # wait for db to start first
+    volumes:
+      - ./backend:/app         # sync local code into container (live-reload during dev)
+
+  # ---- PostgreSQL database ----
+  db:
+    image: postgres:16-alpine  # official Postgres image, lightweight version
+    restart: always
+    environment:
+      POSTGRES_USER: careerpilot
+      POSTGRES_PASSWORD: careerpilot_pass
+      POSTGRES_DB: careerpilot_db
+    ports:
+      - "5432:5432"             # default Postgres port
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # persists data across restarts
+
+# Named volume — Docker manages this storage, survives container removal
+volumes:
+  postgres_data:
