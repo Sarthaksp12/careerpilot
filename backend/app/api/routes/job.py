@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.ai.job_search import search_live_jobs
-from app.Services.match_services import match_resume_with_job
 
 from app.Schemas.job import (
     JobCreate,
@@ -25,8 +24,7 @@ router = APIRouter(
 )
 
 # =====================================================
-# LIVE JOB SEARCH (JSearch)
-# MUST BE ABOVE /{job_id}
+# LIVE JOB SEARCH
 # =====================================================
 
 @router.get("/search-live")
@@ -161,10 +159,12 @@ def remove_job(
         "message": "Job deleted successfully"
     }
 
+# =====================================================
+# AI MATCH (TEMPORARILY DISABLED)
+# =====================================================
 
-# =====================================================
-# AI MATCH
-# =====================================================
+"""
+from app.Services.match_services import match_resume_with_job
 
 @router.post("/{job_id}/match/{resume_id}")
 def match_job(
@@ -177,16 +177,4 @@ def match_job(
         job_id=job_id,
         resume_id=resume_id,
     )
-@router.get("/search-live")
-def search_jobs_live(
-    query: str,
-    page: int = 1,
-):
-
-    jobs = search_live_jobs(query, page)
-
-    return {
-        "success": True,
-        "count": len(jobs),
-        "jobs": jobs,
-    }
+"""
