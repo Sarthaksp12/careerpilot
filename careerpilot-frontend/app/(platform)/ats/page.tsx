@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+
 import { PageHeader } from "@/components/shared/page-header";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -10,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { GlassCard } from "@/components/shared/glass-card";
 import { useResumes } from "@/hooks/use-resumes";
 import { getATSAnalysis } from "@/lib/ats-storage";
+
 import type { ATSAnalysis } from "@/types/resume";
 import { BarChart3 } from "lucide-react";
 
@@ -17,22 +19,28 @@ function buildAnalysisFromResume(resume: {
   skills: string | null;
 }): ATSAnalysis {
   const skills = resume.skills
-    ? resume.skills.split(",").map((s) => s.trim()).filter(Boolean)
+    ? resume.skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
     : [];
 
   return {
     skills,
-    ats_score: skills.length > 0 ? Math.min(60 + skills.length * 3, 92) : 0,
+    ats_score:
+      skills.length > 0 ? Math.min(60 + skills.length * 3, 92) : 0,
     missing_keywords: [],
     strengths: skills.slice(0, 5),
     suggestions: ["Upload a fresh PDF for full AI ATS analysis."],
   };
 }
 
-export default function ATSPage() {
+function ATSPageContent() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get("resumeId");
+
   const { resumes, loading } = useResumes();
+
   const [selectedId, setSelectedId] = useState<number | "">("");
 
   useEffect(() => {
@@ -49,7 +57,10 @@ export default function ATSPage() {
   );
 
   const analysis = useMemo(() => {
-    if (!selectedId || !selectedResume) return null;
+    if (!selectedId || !selectedResume) {
+      return null;
+    }
+
     return (
       getATSAnalysis(Number(selectedId)) ??
       buildAnalysisFromResume(selectedResume)
@@ -79,10 +90,13 @@ export default function ATSPage() {
             <label className="mb-2 block text-sm text-zinc-400">
               Select resume
             </label>
+
             <Select
               value={selectedId}
               onChange={(e) =>
-                setSelectedId(e.target.value ? Number(e.target.value) : "")
+                setSelectedId(
+                  e.target.value ? Number(e.target.value) : ""
+                )
               }
             >
               {resumes.map((resume) => (
@@ -93,9 +107,21 @@ export default function ATSPage() {
             </Select>
           </GlassCard>
 
-          {analysis ? <ATSAnalysisView analysis={analysis} /> : null}
+          {analysis ? (
+            <ATSAnalysisView analysis={analysis} />
+          ) : null}
         </>
       )}
     </div>
+  );
+}
+
+export default function ATSPage() {
+  return (
+    <Suspense
+      fallback={<LoadingSpinner label="Loading ATS analysis..." />}
+    >
+      <ATSPageContent />
+    </Suspense>
   );
 }
